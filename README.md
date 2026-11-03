@@ -1,205 +1,181 @@
-# TaskFlow — Team Task Manager
+# TaskFlow
 
-A full-stack collaborative task management web application built with **React + Spring Boot**.
+A team task manager where you create projects, add teammates, and assign tasks. It's a React frontend with a Spring Boot backend, and it's deployed online.
 
----
+**Live app:** https://task-flow-three-alpha.vercel.app
 
-## Live Demo
-> Deploy to Railway following the steps below.
-> https://team-task-manager-production-a573.up.railway.app/
+The backend runs on a free Render instance, which goes to sleep when nobody has used it for a while. The first request after that can take up to a minute, so if the first login or signup seems stuck, give it a moment.
 
----
+## What it does
 
-## Features
+**Accounts**
+- Sign up with name, email and password
+- Login uses JWT tokens
+- Pages are protected, so logged-out users get sent to the login page
 
-### Authentication
-- Signup with Name, Email, Password
-- JWT-based secure login
-- Protected routes — unauthenticated users are redirected to login
+**Projects**
+- Anyone can create a project and becomes its admin
+- Admins add teammates by searching their email, and can remove them later
+- Each person sees only the projects they belong to
 
-### Role-Based Access Control
-| Feature | Admin | Member |
-|---|---|---|
-| Create tasks | ✅ | ❌ |
-| Edit / Delete tasks | ✅ | ❌ |
-| Add / Remove members | ✅ | ❌ |
-| Update task status | ✅ | Only assigned tasks |
-| View project tasks | ✅ | ✅ |
-| View project members | ✅ | ✅ |
-
-### Project Management
-- Create projects (creator is automatically **Admin**)
-- Admin can add members by **searching their email**
-- Admin can remove members
-- Admin can assign roles (Admin / Member)
-- Members can view all projects they belong to
-
-### Task Management
-- Tasks have: Title, Description, Due Date, Priority (Low/Medium/High)
-- Status workflow: **To Do → In Progress → Done**
+**Tasks**
+- A task has a title, description, due date and priority (low, medium, high)
+- Status moves from To Do to In Progress to Done
+- Tasks past their due date are flagged as overdue
 - Tasks are assigned to project members
-- Admin: full create/edit/delete/assign control
-- Member: update status of their own assigned tasks only
-- Overdue badge auto-calculated
 
-### Dashboard
-- Total tasks, In Progress, Completed, Overdue stats
-- Tasks Per User chart (shown when you are Admin of any project)
-- Recent tasks list
+**Dashboard**
+- Counts for total, in-progress, completed and overdue tasks
+- A tasks-per-user chart for admins
+- A list of recent tasks
 
----
+### Who can do what
 
-## Tech Stack
+| Action | Admin | Member |
+|---|---|---|
+| Create tasks | Yes | No |
+| Edit or delete tasks | Yes | No |
+| Add or remove members | Yes | No |
+| Update task status | Yes | Only on tasks assigned to them |
+| View project tasks and members | Yes | Yes |
 
-**Frontend:** React 18, React Router v6, Axios, Vite  
-**Backend:** Spring Boot 3.2, Spring Security, Spring Data JPA  
-**Database:** PostgreSQL (production) / H2 (local dev)  
-**Auth:** JWT (jjwt 0.12.3)  
-**Deployment:** Railway
+## Built with
 
----
+- **Frontend:** React 18, React Router 6, Axios, Vite
+- **Backend:** Spring Boot 3.2, Spring Security, Spring Data JPA
+- **Auth:** JWT (jjwt 0.12.3)
+- **Database:** PostgreSQL in production, in-memory H2 for local development
 
-## Local Development
+## Hosting
 
-### Prerequisites
-- Node.js 18+
-- Java 21+
-- Maven 3.9+
+| Part | Service |
+|---|---|
+| Frontend | Vercel |
+| Backend | Render (Docker) |
+| Database | Neon (PostgreSQL) |
 
-### Backend
+## Running it locally
+
+You need Node.js 18+, Java 21 and Maven 3.9+.
+
+**Backend**
 
 ```bash
 cd backend
-
-# Optional: set env vars for local Postgres, or use H2 (default)
-export JWT_SECRET=YourSuperSecretKeyAtLeast256BitsLong!!!!
-export ALLOWED_ORIGINS=http://localhost:5173
-
 mvn spring-boot:run
-# Backend starts on http://localhost:8080
 ```
 
-### Frontend
+It starts on http://localhost:8080. With no extra setup it uses an in-memory H2 database, so the data resets every time you restart it.
+
+**Frontend**
 
 ```bash
 cd frontend
-
 cp .env.example .env
-# Set VITE_API_URL=http://localhost:8080/api in .env
-
 npm install
 npm run dev
-# Frontend starts on http://localhost:5173
 ```
 
----
+It starts on http://localhost:5173 and talks to the backend through `VITE_API_URL` in `.env` (the example file points to `http://localhost:8080/api`).
 
-## Deployment (Railway)
+## Deploying your own copy
 
-### Step 1 — Create a Railway project
-1. Go to [railway.app](https://railway.app) and create a new project
-2. Add a **PostgreSQL** plugin to the project
+**1. Database (Neon).** Create a project and note the host, database name, user and password.
 
-### Step 2 — Deploy Backend
+**2. Backend (Render).** Create a Web Service from this repo with the root directory set to `backend` and the runtime set to Docker. Set the health check path to `/health` and add these environment variables:
 
-1. Add a new service → **Deploy from GitHub repo** → select the `backend` folder
-2. Set environment variables:
-   ```
-   DATABASE_URL=jdbc:postgresql://${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}
-   DB_USERNAME=${{Postgres.PGUSER}}
-   DB_PASSWORD=${{Postgres.PGPASSWORD}}
-   DB_DRIVER=org.postgresql.Driver
-   HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
-   JWT_SECRET=<random-256bit-string>
-   ALLOWED_ORIGINS=https://<your-frontend-url>.railway.app
-   ```
-3. Railway will use `railway.toml` → `mvn clean package -DskipTests` to build
+```
+DATABASE_URL=jdbc:postgresql://<host>/<database>?sslmode=require
+DB_USERNAME=<user>
+DB_PASSWORD=<password>
+DB_DRIVER=org.postgresql.Driver
+HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+JWT_SECRET=<a long random string, 32+ characters>
+ALLOWED_ORIGINS=https://<your-frontend-url>
+```
 
-### Step 3 — Deploy Frontend
+`DATABASE_URL` has to start with `jdbc:postgresql://`. The plain `postgresql://` link that Neon shows won't work with Spring Boot.
 
-1. Add another service → **Deploy from GitHub repo** → select the `frontend` folder
-2. Set environment variable:
-   ```
-   VITE_API_URL=https://<your-backend-url>.railway.app/api
-   ```
-3. Railway will use `railway.toml` → `npm run build`
+**3. Frontend (Vercel).** Import the repo with the root directory set to `frontend`, and add:
 
-### Step 4 — Verify
-- Visit your frontend Railway URL
-- Register a new account → you are automatically Admin of any project you create
-- Invite teammates by their email
+```
+VITE_API_URL=https://<your-backend-url>/api
+```
 
----
+This value is read at build time, so redeploy the frontend if you change it. The `vercel.json` file makes page refreshes work with React Router.
 
-## API Endpoints
+**4.** Put the Vercel URL into `ALLOWED_ORIGINS` on Render (no trailing slash), and you're done.
 
-### Auth
+## API
+
+All endpoints except register, login and `/health` need a `Bearer` token.
+
+**Auth**
+
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login, returns JWT |
+| POST | `/api/auth/register` | Create an account |
+| POST | `/api/auth/login` | Log in and get a token |
 
-### Users
+**Users**
+
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/users/search?email=x` | Search user by email |
-| GET | `/api/users/me` | Current user profile |
+| GET | `/api/users/search?email=` | Find a user by email |
+| GET | `/api/users/me` | Current user |
 
-### Projects
+**Projects**
+
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/projects` | All projects for current user |
-| POST | `/api/projects` | Create project (creator = Admin) |
-| GET | `/api/projects/:id` | Get project details |
+| GET | `/api/projects` | Projects the user belongs to |
+| POST | `/api/projects` | Create a project |
+| GET | `/api/projects/:id` | Project details |
 | GET | `/api/projects/:id/members` | List members |
-| POST | `/api/projects/:id/members` | Add member (Admin only) |
-| DELETE | `/api/projects/:id/members/:userId` | Remove member (Admin only) |
+| POST | `/api/projects/:id/members` | Add a member (admin) |
+| DELETE | `/api/projects/:id/members/:userId` | Remove a member (admin) |
 
-### Tasks
+**Tasks**
+
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/tasks/my` | Tasks assigned to current user |
-| GET | `/api/tasks/project/:projectId` | All tasks in a project |
-| POST | `/api/tasks` | Create task (Admin only) |
-| PATCH | `/api/tasks/:id` | Update task |
-| DELETE | `/api/tasks/:id` | Delete task (Admin only) |
+| GET | `/api/tasks/my` | Tasks assigned to me |
+| GET | `/api/tasks/project/:projectId` | Tasks in a project |
+| GET | `/api/tasks/:id` | One task |
+| POST | `/api/tasks` | Create a task (admin) |
+| PATCH | `/api/tasks/:id` | Update a task |
+| DELETE | `/api/tasks/:id` | Delete a task (admin) |
 
-### Dashboard
+**Dashboard**
+
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/dashboard` | Stats + tasks per user |
+| GET | `/api/dashboard` | Stats and tasks per user |
 
----
-
-## Project Structure
+## Project layout
 
 ```
-team-task-manager/
-├── backend/
-│   ├── src/main/java/com/taskmanager/
-│   │   ├── TaskManagerApplication.java
-│   │   ├── controller/         # REST controllers
-│   │   ├── model/              # JPA entities
-│   │   ├── repository/         # Spring Data repos
-│   │   ├── dto/                # Request/Response DTOs
-│   │   ├── security/           # JWT + Spring Security
-│   │   └── config/             # SecurityConfig, ExceptionHandler
-│   ├── src/main/resources/application.properties
-│   ├── pom.xml
-│   └── railway.toml
-└── frontend/
-    ├── src/
-    │   ├── api/client.js       # Axios API layer
-    │   ├── components/Layout.jsx
-    │   ├── context/AuthContext.jsx
-    │   ├── pages/
-    │   │   ├── LoginPage.jsx
-    │   │   ├── RegisterPage.jsx
-    │   │   ├── DashboardPage.jsx
-    │   │   ├── ProjectsPage.jsx
-    │   │   ├── ProjectDetailPage.jsx
-    │   │   └── TasksPage.jsx
-    │   └── utils/badges.jsx
-    ├── package.json
-    └── railway.toml
+backend/
+├── src/main/java/com/taskmanager/
+│   ├── controller/      REST endpoints
+│   ├── model/           JPA entities
+│   ├── repository/      database access
+│   ├── dto/             request and response objects
+│   ├── security/        JWT and Spring Security
+│   └── config/          security config, error handling
+├── src/main/resources/
+│   └── application.properties
+├── Dockerfile
+└── pom.xml
+
+frontend/
+├── src/
+│   ├── api/
+│   │   └── client.js    Axios setup and API calls
+│   ├── components/      shared layout
+│   ├── context/         auth state
+│   ├── pages/           login, register, dashboard, projects, tasks
+│   └── utils/           badge helpers
+├── vercel.json
+└── package.json
 ```
