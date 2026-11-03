@@ -105,9 +105,9 @@ npm run dev
 1. Add a new service → **Deploy from GitHub repo** → select the `backend` folder
 2. Set environment variables:
    ```
-   DATABASE_URL=postgresql://<user>:<pass>@<host>:<port>/<db>
-   DB_USERNAME=<postgres_user>
-   DB_PASSWORD=<postgres_password>
+   DATABASE_URL=jdbc:postgresql://${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}
+   DB_USERNAME=${{Postgres.PGUSER}}
+   DB_PASSWORD=${{Postgres.PGPASSWORD}}
    DB_DRIVER=org.postgresql.Driver
    HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
    JWT_SECRET=<random-256bit-string>
